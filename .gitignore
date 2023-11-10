@@ -1,0 +1,17 @@
+# Generating folders
+**/node_modules
+**/dist
+
+# Environment folders
+.idea
+**/_DS_Store
+
+# Local configuration files
+**/.env
+**/*.env
+
+# logs
+app/logs
+
+# coverage
+coverage/
