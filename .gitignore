@@ -15,3 +15,7 @@ app/logs
 
 # coverage
 coverage/
+
+# Added by cargo
+
+/target

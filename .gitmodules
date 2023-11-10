@@ -1,0 +1,3 @@
+[submodule "lambdaworks_stark_platinum"]
+	path = lambdaworks_stark_platinum
+	url = git@github.com:raphaelDkhn/lambdaworks_stark_platinum.git
