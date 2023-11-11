@@ -2,6 +2,31 @@
 
 ## APIs
 
+### `POST /model/<model_id>/purchase"`
+
+#### Path Params
+
+`model_id` -> `string`
+
+#### Body
+
+```javascript
+{
+    api_key: "string",
+}
+```
+
+#### Returns
+
+```json
+{
+  "id": "string",
+  "name": "string",
+  "description": "string",
+  "price": "string"
+}
+```
+
 ### `POST /upload_model`
 
 #### Body
@@ -21,11 +46,12 @@ Multipart Form Data in the following format.
 
 ```json
 {
-    "models_id": "string"
+  "models_id": "string"
 }
 ```
 
 ### `GET /proof/<proof_id>`
+
 #### Path Params
 
 `proof_id` -> `string`
@@ -33,7 +59,6 @@ Multipart Form Data in the following format.
 #### Returns
 
 A file containing the proof.
-
 
 ### `POST /create_user`
 
@@ -55,7 +80,6 @@ None
 ```
 
 ### `GET /me/<api_keys>`
-
 
 #### Path Params
 

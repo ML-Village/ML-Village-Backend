@@ -190,6 +190,16 @@ async fn get_proof(
     Ok((content_type, file))
 }
 
+/**
+ * --- Purchase Model ---
+ */
+
+#[derive(Deserialize)]
+#[serde(crate = "rocket::serde")]
+struct PurchaseModelParams<'r> {
+    api_key: &'r str,
+}
+
 #[derive(Serialize)]
 #[serde(crate = "rocket::serde")]
 struct MlModel {
@@ -197,6 +207,55 @@ struct MlModel {
     name: String,
     description: String,
     price: String,
+}
+
+#[post("/model/<model_id>/purchase", data = "<params>")]
+async fn purchase_model(
+    mut db: Connection<ProverBackendDB>,
+    model_id: String,
+    params: Json<PurchaseModelParams<'_>>,
+) -> Result<Json<MlModel>, BadRequest<String>> {
+    // TODO: implement proper purchase model flow
+    let query_result = sqlx::query("SELECT * FROM users WHERE api_key = ?")
+        .bind(params.api_key)
+        .fetch_one(&mut **db)
+        .await
+        .ok();
+
+    let user = match query_result {
+        Some(row) => row,
+        None => return Err(BadRequest(("Cannot find user".to_string()))),
+    };
+
+    let insert_result: Result<sqlx::sqlite::SqliteQueryResult, sqlx::Error> =
+        sqlx::query("INSERT INTO users_model (user_id, model_id) VALUES (?, ?)")
+            .bind(user.get::<String, &str>("id"))
+            .bind(&model_id)
+            .execute(&mut **db)
+            .await;
+
+    match insert_result {
+        Ok(_) => Ok::<(), String>(()),
+        Err(err) => return Err(BadRequest(err.to_string())),
+    };
+
+    let query_result = sqlx::query("SELECT * FROM ml_models WHERE id = ?")
+        .bind(&model_id)
+        .fetch_one(&mut **db)
+        .await
+        .ok();
+
+    let model = match query_result {
+        Some(row) => row,
+        None => return Err(BadRequest(("Cannot find user".to_string()))),
+    };
+
+    Ok(Json(MlModel {
+        description: model.get("description"),
+        id: model.get("id"),
+        name: model.get("name"),
+        price: model.get("price"),
+    }))
 }
 
 /**
@@ -297,6 +356,13 @@ async fn rocket() -> _ {
         .attach(ProverBackendDB::init())
         .mount(
             "/",
-            routes![upload_model, infer, get_proof, create_user, get_me],
+            routes![
+                upload_model,
+                infer,
+                purchase_model,
+                get_proof,
+                create_user,
+                get_me
+            ],
         )
 }
