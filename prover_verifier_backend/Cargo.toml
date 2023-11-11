@@ -17,6 +17,22 @@ uuid = { version = " 1.5.0", features = [
     "fast-rng",
     "macro-diagnostics",
 ] }
-sqlite = "0.32.0"
-# diesel = { version = "2.0.2", features = ["sqlite"] }
+sqlx = { version = "0.7", features = [
+    "runtime-tokio",
+    "tls-native-tls",
+    "sqlite",
+    "macros",
+] }
 dotenvy = "0.15.7"
+rocket_db_pools = { version = "=0.1.0-rc.4", features = [
+    "sqlx_sqlite",
+] }
+tokio = { version = "1", features = ["full"] }
+
+
+[default.databases.prover_backend_db]
+url = "prover_backend_db"
+
+[[bin]]
+name = "setup_db"
+path = "src/setup_db.rs"

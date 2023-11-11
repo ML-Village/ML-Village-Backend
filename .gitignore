@@ -21,3 +21,6 @@ coverage/
 
 # Python
 .venv
+
+# sqlite db
+prover_verifier_backend_db

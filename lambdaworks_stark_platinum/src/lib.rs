@@ -8,7 +8,6 @@ use lambdaworks_math::field::{
 
 pub mod cairo;
 pub mod starks;
-pub mod verifier;
 
 pub type PrimeField = Stark252PrimeField;
 pub type FE = FieldElement<PrimeField>;
