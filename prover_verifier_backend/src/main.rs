@@ -8,9 +8,11 @@ use rocket::{
 use serde::Deserialize;
 use uuid::Uuid;
 
+mod cors;
+use cors::CORS;
+
 #[macro_use]
 extern crate rocket;
-
 
 #[derive(Deserialize)]
 #[serde(crate = "rocket::serde")]
@@ -20,9 +22,7 @@ struct InferParams {
 }
 
 #[post("/infer", data = "<params>")]
-async fn infer(
-    params: Json<InferParams>,
-) -> Result<(ContentType, NamedFile), BadRequest<String>> {
+async fn infer(params: Json<InferParams>) -> Result<(ContentType, NamedFile), BadRequest<String>> {
     // !todo!("get and run the model");
 
     // Create arbritrary id for the proof generated
@@ -45,5 +45,5 @@ async fn infer(
 
 #[launch]
 async fn rocket() -> _ {
-    rocket::build().mount("/", routes![infer])
+    rocket::build().attach(CORS).mount("/", routes![infer])
 }
