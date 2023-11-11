@@ -1,6 +1,13 @@
+use rocket::serde::json::Json;
+
 #[macro_use] extern crate rocket;
 
-#[get("/")]
+#[post("/generate_proof")]
+fn hello() -> &'static str {
+    "Hello, world!"
+}
+
+#[post("/verify_proof")]
 fn hello() -> &'static str {
     "Hello, world!"
 }

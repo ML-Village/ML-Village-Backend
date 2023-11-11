@@ -17,5 +17,7 @@ app/logs
 coverage/
 
 # Added by cargo
-
 /target
+
+# Python
+.venv
