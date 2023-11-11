@@ -25,5 +25,6 @@ coverage/
 # sqlite db
 prover_backend_db
 
-# 
+# files saved
 models/
+inference_result/

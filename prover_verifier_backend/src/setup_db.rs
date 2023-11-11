@@ -1,6 +1,9 @@
-use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
+use std::path::Path;
 
-#[tokio::main] // Requires the `attributes` feature of `async-std`
+use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
+use tokio::fs;
+
+#[tokio::main]
 async fn main() -> Result<(), sqlx::Error> {
     let sqlite_options = SqliteConnectOptions::new()
         .create_if_missing(true)
@@ -53,6 +56,13 @@ async fn main() -> Result<(), sqlx::Error> {
     ).execute(&pool)
     .await?;
 
+    if !Path::new("models").exists() {
+        fs::create_dir("models").await?;
+    }
+
+    if !Path::new("inference_result").exists() {
+        fs::create_dir("inference_result").await?;
+    }
         
     Ok(())
 }
