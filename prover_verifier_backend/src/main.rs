@@ -10,11 +10,14 @@ use rocket::{
 };
 use rocket_db_pools::{sqlx, Connection, Database};
 use serde::{Deserialize, Serialize};
+use service::{register_model, register_subscription};
 use sqlx::Row;
+use starknet::core::types::FieldElement;
 use uuid::Uuid;
 
 mod cors;
 mod giza_utils;
+mod service;
 use cors::CORS;
 
 #[macro_use]
@@ -47,6 +50,7 @@ struct UploadModelForm<'r> {
 #[serde(crate = "rocket::serde")]
 struct UploadModelResult {
     model_id: String,
+    register_result: String,
 }
 
 #[post("/upload_model", data = "<model_data>")]
@@ -99,8 +103,14 @@ async fn upload_model(
         Err(err) => return Err(BadRequest(err.to_string())),
     };
 
+    let id = model_id.to_string();
+    let field = FieldElement::from_hex_be(&id).unwrap();
+    let register_result = register_model(field).await.transaction_hash;
+    println!("register_result: {:?}", register_result);
+
     Ok(Json(UploadModelResult {
         model_id: model_id.to_string(),
+        register_result: register_result.to_string(),
     }))
 }
 
@@ -198,6 +208,8 @@ async fn get_proof(
 #[serde(crate = "rocket::serde")]
 struct PurchaseModelParams<'r> {
     api_key: &'r str,
+    owner_address: &'r str,
+    subscription_end_timestamp: &'r str,
 }
 
 #[derive(Serialize)]
@@ -209,12 +221,22 @@ struct MlModel {
     price: String,
 }
 
+#[derive(Serialize)]
+#[serde(crate = "rocket::serde")]
+struct MlPurchaseModel {
+    id: String,
+    name: String,
+    description: String,
+    price: String,
+    transaction_hash: String,
+}
+
 #[post("/model/<model_id>/purchase", data = "<params>")]
 async fn purchase_model(
     mut db: Connection<ProverBackendDB>,
     model_id: String,
     params: Json<PurchaseModelParams<'_>>,
-) -> Result<Json<MlModel>, BadRequest<String>> {
+) -> Result<Json<MlPurchaseModel>, BadRequest<String>> {
     // TODO: implement proper purchase model flow
     let query_result = sqlx::query("SELECT * FROM users WHERE api_key = ?")
         .bind(params.api_key)
@@ -250,11 +272,25 @@ async fn purchase_model(
         None => return Err(BadRequest(("Cannot find user".to_string()))),
     };
 
-    Ok(Json(MlModel {
+    let register_subscription_result = register_subscription(
+        FieldElement::from_hex_be(&params.owner_address).unwrap(),
+        FieldElement::from_hex_be(&model_id).unwrap(),
+        FieldElement::from_hex_be(&params.subscription_end_timestamp).unwrap(),
+    )
+    .await
+    .transaction_hash;
+
+    println!(
+        "register_subscription_result: {:?}",
+        register_subscription_result
+    );
+
+    Ok(Json(MlPurchaseModel {
         description: model.get("description"),
         id: model.get("id"),
         name: model.get("name"),
         price: model.get("price"),
+        transaction_hash: register_subscription_result.to_string(),
     }))
 }
 
