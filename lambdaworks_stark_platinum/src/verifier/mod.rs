@@ -1,9 +1,9 @@
 use lambdaworks_math::field::fields::fft_friendly::stark_252_prime_field::Stark252PrimeField;
 use lambdaworks_math::traits::{Deserializable, Serializable};
-use lambdaworks_stark::cairo::air::{generate_cairo_proof, verify_cairo_proof, PublicInputs};
-use lambdaworks_stark::cairo::runner::run::{generate_prover_args, CairoVersion};
-use lambdaworks_stark::starks::proof::options::ProofOptions;
-use lambdaworks_stark::starks::proof::stark::StarkProof;
+use crate::cairo::air::{generate_cairo_proof, verify_cairo_proof, PublicInputs};
+use crate::cairo::runner::run::{generate_prover_args, CairoVersion};
+use crate::starks::proof::options::ProofOptions;
+use crate::starks::proof::stark::StarkProof;
 use std::env;
 use std::time::Instant;
 
