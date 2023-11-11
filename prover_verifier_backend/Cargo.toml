@@ -6,3 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+# local
+lambdaworks-stark = { path = "../lambdaworks_stark_platinum"}
+
+# external
+rocket = { version = "=0.5.0-rc.4", features = ["secrets", "tls", "json"] }
