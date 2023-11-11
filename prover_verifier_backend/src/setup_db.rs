@@ -26,8 +26,7 @@ async fn main() -> Result<(), sqlx::Error> {
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS ml_proofs (
             id VARCHAR PRIMARY KEY NOT NULL,
-            model_id VARCHAR NOT NULL,
-            proof_path VARCHAR NOT NULL
+            model_id VARCHAR NOT NULL
         );",
     )
     .execute(&pool)

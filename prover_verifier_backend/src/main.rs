@@ -3,7 +3,7 @@ use rocket::tokio::fs::create_dir;
 use rocket::form::{Form, Strict};
 use rocket::fs::TempFile;
 use rocket::http::Status;
-use rocket::response::status;
+use rocket::response::status::{self, NotFound};
 use rocket::tokio;
 use rocket::{
     form, fs::NamedFile, http::ContentType, response::status::BadRequest, serde::json::Json,
@@ -99,6 +99,10 @@ async fn upload_model(
     ))
 }
 
+
+/**
+ * --- Infer ---
+ */
 #[derive(Deserialize)]
 #[serde(crate = "rocket::serde")]
 struct InferParams<'r> {
@@ -151,17 +155,34 @@ async fn infer(
     }));
 }
 
+
+/**
+ * --- Get Proof ---
+ */
 #[get("/proof/<proof_id>")]
 async fn get_proof(
     mut db: Connection<ProverBackendDB>,
     proof_id: String,
 ) -> Result<(ContentType, NamedFile), BadRequest<String>> {
+    let query_result = sqlx::query("SELECT * FROM ml_proofs WHERE id = ?")
+    .bind(&proof_id)
+    .fetch_one(&mut **db)
+    .await
+    .ok();
+
+    // Check if proof id exists
+    match query_result {
+        Some(row) => row,
+        None => return Err(BadRequest("proof not found".to_string()))
+    };
+
     // Get and return the generated proof
     let content_type = ContentType::new("application", "octet-stream");
-    let file = match NamedFile::open(format!("inference_result/{}.proof", proof_id)).await {
+    let file = match NamedFile::open(format!("inference_result/{}.proof", &proof_id)).await {
         Ok(file) => file,
         Err(_) => return Err(BadRequest("Failed to find proof".to_owned())),
     };
+    
     Ok((content_type, file))
 }
 
@@ -170,5 +191,5 @@ async fn rocket() -> _ {
     rocket::build()
         .attach(CORS)
         .attach(ProverBackendDB::init())
-        .mount("/", routes![upload_model, infer])
+        .mount("/", routes![upload_model, infer, get_proof])
 }
