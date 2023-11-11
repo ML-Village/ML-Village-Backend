@@ -2,7 +2,7 @@
 
 #[macro_use]
 extern crate rocket;
-#[macro_use]
+#[macro_use]tr
 extern crate rocket_contrib;
 
 use rocket_contrib::json::Json;
