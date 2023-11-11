@@ -28,6 +28,8 @@ rocket_db_pools = { version = "=0.1.0-rc.4", features = [
     "sqlx_sqlite",
 ] }
 tokio = { version = "1", features = ["full"] }
+rand = "0.8.5"
+const-hex = "1.10.0"
 
 [[bin]]
 name = "setup_db"

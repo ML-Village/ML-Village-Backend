@@ -1145,6 +1145,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32b13ea120a812beba79e34316b3942a857c86ec1593cb34f27bb28272ce2cca"
 
 [[package]]
+name = "const-hex"
+version = "1.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a5104de16b218eddf8e34ffe2f86f74bfa4e61e95a1b89732fccf6325efd0557"
+dependencies = [
+ "cfg-if",
+ "cpufeatures",
+ "hex",
+ "proptest",
+ "serde",
+]
+
+[[package]]
 name = "const-oid"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3119,8 +3132,10 @@ dependencies = [
 name = "prover_verifier_backend"
 version = "0.1.0"
 dependencies = [
+ "const-hex",
  "dotenvy",
  "lambdaworks-stark",
+ "rand",
  "rocket",
  "rocket_db_pools",
  "serde",

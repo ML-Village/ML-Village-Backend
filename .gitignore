@@ -23,7 +23,7 @@ coverage/
 .venv
 
 # sqlite db
-prover_verifier_backend_db
+prover_backend_db
 
 # 
 models/

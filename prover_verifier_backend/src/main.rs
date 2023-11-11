@@ -1,3 +1,4 @@
+use rand::RngCore;
 use rocket::tokio::fs::create_dir;
 
 use rocket::form::{Form, Strict};
@@ -159,6 +160,7 @@ async fn infer(
 /**
  * --- Get Proof ---
  */
+
 #[get("/proof/<proof_id>")]
 async fn get_proof(
     mut db: Connection<ProverBackendDB>,
@@ -182,8 +184,32 @@ async fn get_proof(
         Ok(file) => file,
         Err(_) => return Err(BadRequest("Failed to find proof".to_owned())),
     };
-    
+
     Ok((content_type, file))
+}
+
+/**
+ * --- Get Api Key ---
+ */
+
+ #[derive(Serialize)]
+ #[serde(crate = "rocket::serde")]
+ struct ApiKeyResult {
+     api_key: String,
+ }
+
+#[get("/api_key")]
+async fn get_api_key(
+) -> Result<Json<ApiKeyResult>, BadRequest<String>> {
+    // TODO: implement proper flow for api keys
+    let mut bytes = [0; 32];
+    rand::thread_rng().fill_bytes(&mut bytes);
+    
+    let new_key = const_hex::encode(bytes);
+
+    Ok(Json(ApiKeyResult {
+        api_key: new_key
+    }))
 }
 
 #[launch]
@@ -191,5 +217,5 @@ async fn rocket() -> _ {
     rocket::build()
         .attach(CORS)
         .attach(ProverBackendDB::init())
-        .mount("/", routes![upload_model, infer, get_proof])
+        .mount("/", routes![upload_model, infer, get_proof, get_api_key])
 }
