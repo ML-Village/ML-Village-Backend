@@ -1,9 +1,10 @@
 use rand::RngCore;
+use rocket::http::Status;
 use rocket::tokio::fs::create_dir;
 
 use rocket::form::{Form, Strict};
 use rocket::fs::TempFile;
-use rocket::response::status::{self, NotFound};
+use rocket::response::status::{self, Custom, NotFound};
 use rocket::{
     form, fs::NamedFile, http::ContentType, response::status::BadRequest, serde::json::Json,
     FromForm,
@@ -104,7 +105,12 @@ async fn upload_model(
     };
 
     let id = model_id.to_string();
-    let field = FieldElement::from_hex_be(&id).unwrap();
+
+    // Removing hyphens and converting to lowercase
+    let hex_id = id.replace("-", "").to_lowercase();
+
+    // Now use hex_id as needed
+    let field = FieldElement::from_hex_be(&hex_id).unwrap();
     let register_result = register_model(field).await.transaction_hash;
     println!("register_result: {:?}", register_result);
 
@@ -112,6 +118,11 @@ async fn upload_model(
         model_id: model_id.to_string(),
         register_result: register_result.to_string(),
     }))
+}
+
+#[options("/<_..>")]
+fn all_options() -> Custom<()> {
+    Custom(Status::Ok, ())
 }
 
 /**
@@ -244,22 +255,25 @@ async fn purchase_model(
         .await
         .ok();
 
+    println!("part 1");
     let user = match query_result {
         Some(row) => row,
         None => return Err(BadRequest(("Cannot find user".to_string()))),
     };
-
+    println!("part 2");
     let insert_result: Result<sqlx::sqlite::SqliteQueryResult, sqlx::Error> =
         sqlx::query("INSERT INTO users_model (user_id, model_id) VALUES (?, ?)")
             .bind(user.get::<String, &str>("id"))
             .bind(&model_id)
             .execute(&mut **db)
             .await;
-
+    println!("part 3");
     match insert_result {
         Ok(_) => Ok::<(), String>(()),
         Err(err) => return Err(BadRequest(err.to_string())),
     };
+
+    println!("part 4");
 
     let query_result = sqlx::query("SELECT * FROM ml_models WHERE id = ?")
         .bind(&model_id)
@@ -267,10 +281,14 @@ async fn purchase_model(
         .await
         .ok();
 
+    println!("part 5");
+
     let model = match query_result {
         Some(row) => row,
         None => return Err(BadRequest(("Cannot find user".to_string()))),
     };
+
+    println!("masuk");
 
     let register_subscription_result = register_subscription(
         FieldElement::from_hex_be(&params.owner_address).unwrap(),
@@ -396,6 +414,7 @@ async fn rocket() -> _ {
                 upload_model,
                 infer,
                 purchase_model,
+                all_options,
                 get_proof,
                 create_user,
                 get_me

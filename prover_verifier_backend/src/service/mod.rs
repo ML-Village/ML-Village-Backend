@@ -60,7 +60,6 @@ pub async fn register_model(model_id: FieldElement) -> InvokeTransactionResult {
     let account_contract_address_hex =
         env::var("ACCOUNT_CONTRACT_ADDRESS").expect("ACCOUNT_CONTRACT_ADDRESS must be set");
     let contract_address_hex = env::var("CONTRACT_ADDRESS").expect("CONTRACT_ADDRESS must be set");
-
     let provider = SequencerGatewayProvider::starknet_alpha_goerli();
     let signer = LocalWallet::from(SigningKey::from_secret_scalar(
         FieldElement::from_hex_be(&private_key_hex).unwrap(),
