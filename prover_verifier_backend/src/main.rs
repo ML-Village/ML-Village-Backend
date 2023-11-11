@@ -121,7 +121,7 @@ async fn upload_model(
 #[serde(crate = "rocket::serde")]
 struct InferParams<'r> {
     model_id: &'r str,
-    input_data: Vec<&'r str>,
+    input_data: &'r str,
 }
 
 #[derive(Serialize)]
