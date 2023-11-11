@@ -2,17 +2,18 @@ use rocket::serde::json::Json;
 
 #[macro_use] extern crate rocket;
 
-#[post("/generate_proof")]
-fn hello() -> &'static str {
-    "Hello, world!"
+#[post("/infer")]
+fn infer() -> &'static str {
+
 }
 
-#[post("/verify_proof")]
-fn hello() -> &'static str {
+#[post("/generate_proof")]
+fn generate_proof() -> &'static str {
     "Hello, world!"
 }
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build().mount("/", routes![hello])
+    rocket::build()
+        .mount("/", routes![infer, generate_proof])
 }

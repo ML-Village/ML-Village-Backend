@@ -1,5 +1,9 @@
 [workspace]
-members = ["lambdaworks_stark_platinum", "prover_verifier_backend"]
+members = [
+    "lambdaworks_stark_platinum",
+    "prover_verifier_backend",
+    "verifier_cli",
+]
 
 [workspace.package]
 version = "0.1.0"
