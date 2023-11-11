@@ -1,13 +1,11 @@
-use sqlx::{
-    sqlite::{Sqlite, SqliteConnectOptions, SqlitePoolOptions},
-    SqlitePool,
-};
+use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 
 #[tokio::main] // Requires the `attributes` feature of `async-std`
 async fn main() -> Result<(), sqlx::Error> {
     let sqlite_options = SqliteConnectOptions::new()
         .create_if_missing(true)
-        .filename("prover_backend_db");
+        .filename("prover_backend_db")
+        ;
     let pool = SqlitePoolOptions::new()
         .connect_with(sqlite_options)
         .await?;
@@ -16,10 +14,12 @@ async fn main() -> Result<(), sqlx::Error> {
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS ml_models (
             id VARCHAR PRIMARY KEY NOT NULL,
+            name VARCHAR NOT NULL,
+            description VARCHAR NOT NULL,
             model_path VARCHAR NOT NULL
         );",
     )
-    .fetch_all(&pool)
+    .execute(&pool)
     .await?;
 
     // Proof tables
@@ -30,7 +30,7 @@ async fn main() -> Result<(), sqlx::Error> {
             proof_path VARCHAR NOT NULL
         );",
     )
-    .fetch_all(&pool)
+    .execute(&pool)
     .await?;
 
     Ok(())

@@ -1,24 +1,103 @@
+use rocket::tokio::fs::create_dir;
+
+use rocket::form::{Form, Strict};
+use rocket::fs::TempFile;
+use rocket::http::Status;
+use rocket::response::status;
 use rocket::tokio;
 use rocket::{
-    fs::NamedFile,
-    http::{ContentType, Status},
-    response::status::BadRequest,
-    serde::json::Json,
+    form, fs::NamedFile, http::ContentType, response::status::BadRequest, serde::json::Json,
+    FromForm,
 };
 use rocket_db_pools::{sqlx, Connection, Database};
 use serde::{Deserialize, Serialize};
 use sqlx::Row;
 use uuid::Uuid;
 
+mod giza_utils;
 mod cors;
 use cors::CORS;
 
 #[macro_use]
 extern crate rocket;
 
+const MODEL_PATH: &str = "models";
+/**
+ * Database setup
+ */
 #[derive(Database)]
 #[database("prover_backend_db")]
 struct ProverBackendDB(sqlx::SqlitePool);
+
+/**
+ * Routes
+ */
+
+
+ /**
+  * --- Upload Model ---
+  */
+#[derive(FromForm)]
+struct UploadModelForm<'r> {
+    name: &'r str,
+    description: &'r str,
+    onnx_file: TempFile<'r>,
+}
+
+#[derive(Serialize)]
+#[serde(crate = "rocket::serde")]
+struct UploadModelResult {
+    model_id: String,
+}
+
+#[post("/upload_model", data = "<model_data>")]
+async fn upload_model(
+    mut db: Connection<ProverBackendDB>,
+    mut model_data: Form<Strict<UploadModelForm<'_>>>,
+) -> Result<Json<UploadModelResult>, BadRequest<String>> {
+    let model_id = Uuid::new_v4();
+    let model_path = format!("{}/{}", MODEL_PATH, model_id.to_string());
+    let model_onnx_path = format!("{}/{}/{}.onnx", MODEL_PATH, model_id.to_string(), model_id.to_string());
+
+    // Create dir for the model
+    match create_dir(&model_path).await {
+        Ok(_) => Ok::<(), String>(()),
+        Err(err) => return Err(BadRequest(err.to_string()))
+    };
+
+    // Persist the model
+    match model_data.onnx_file.persist_to(&model_onnx_path).await {
+        Ok(_) => (),
+        Err(err) => return Err(BadRequest(err.to_string())),
+    };
+
+    // Now call the transpile function with the saved file
+    let transpile_result = giza_utils::transpile_onnx_to_orion(&model_onnx_path, &model_path)
+    .await;
+    match transpile_result {
+        Ok(_) => Ok::<(), String>(()),
+        Err(err) =>  return Err(BadRequest(err.to_string())),
+    };
+
+    let insert_result = sqlx::query(
+        "INSERT INTO ml_models (id, name, description, model_path) VALUES
+         (?, ?, ?, ?)",
+    )
+    .bind(model_id.to_string())
+    .bind(model_data.name)
+    .bind(model_data.description)
+    .bind(model_path)
+    .execute(&mut **db).await;
+
+    match insert_result {
+        Ok(_) => Ok::<(), String>(()),
+        Err(err) => return Err(BadRequest(err.to_string()))
+    };
+
+    Ok(Json(
+        UploadModelResult { model_id: model_id.to_string() }
+    ))
+}
 
 #[derive(Deserialize)]
 #[serde(crate = "rocket::serde")]
@@ -91,5 +170,5 @@ async fn rocket() -> _ {
     rocket::build()
         .attach(CORS)
         .attach(ProverBackendDB::init())
-        .mount("/", routes![infer])
+        .mount("/", routes![upload_model, infer])
 }

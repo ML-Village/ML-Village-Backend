@@ -24,3 +24,6 @@ coverage/
 
 # sqlite db
 prover_verifier_backend_db
+
+# 
+models/

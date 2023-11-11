@@ -1,0 +1,3 @@
+
+[default.databases.prover_backend_db]
+url = "sqlite://prover_verifier_backend/prover_backend_db"

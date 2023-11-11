@@ -29,10 +29,11 @@ rocket_db_pools = { version = "=0.1.0-rc.4", features = [
 ] }
 tokio = { version = "1", features = ["full"] }
 
-
-[default.databases.prover_backend_db]
-url = "prover_backend_db"
-
 [[bin]]
 name = "setup_db"
 path = "src/setup_db.rs"
+
+
+[[bin]]
+name = "server"
+path = "src/main.rs"

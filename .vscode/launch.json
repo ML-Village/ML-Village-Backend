@@ -1,0 +1,289 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'lambdaworks-stark'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=lambdaworks-stark"
+                ],
+                "filter": {
+                    "name": "lambdaworks-stark",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'lambdaworks-stark'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=lambdaworks-stark",
+                    "--package=lambdaworks-stark"
+                ],
+                "filter": {
+                    "name": "lambdaworks-stark",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'lambdaworks-stark'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=lambdaworks-stark",
+                    "--package=lambdaworks-stark"
+                ],
+                "filter": {
+                    "name": "lambdaworks-stark",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'integration_tests'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=integration_tests",
+                    "--package=lambdaworks-stark"
+                ],
+                "filter": {
+                    "name": "integration_tests",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug benchmark 'criterion_prover'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bench=criterion_prover",
+                    "--package=lambdaworks-stark"
+                ],
+                "filter": {
+                    "name": "criterion_prover",
+                    "kind": "bench"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug benchmark 'criterion_prover_70k'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bench=criterion_prover_70k",
+                    "--package=lambdaworks-stark"
+                ],
+                "filter": {
+                    "name": "criterion_prover_70k",
+                    "kind": "bench"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug benchmark 'criterion_verifier'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bench=criterion_verifier",
+                    "--package=lambdaworks-stark"
+                ],
+                "filter": {
+                    "name": "criterion_verifier",
+                    "kind": "bench"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug benchmark 'criterion_verifier_70k'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bench=criterion_verifier_70k",
+                    "--package=lambdaworks-stark"
+                ],
+                "filter": {
+                    "name": "criterion_verifier_70k",
+                    "kind": "bench"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug benchmark 'criterion_giza'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bench=criterion_giza",
+                    "--package=lambdaworks-stark"
+                ],
+                "filter": {
+                    "name": "criterion_giza",
+                    "kind": "bench"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'setup_db'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=setup_db",
+                    "--package=prover_verifier_backend"
+                ],
+                "filter": {
+                    "name": "setup_db",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'setup_db'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=setup_db",
+                    "--package=prover_verifier_backend"
+                ],
+                "filter": {
+                    "name": "setup_db",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'server'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=server",
+                    "--package=prover_verifier_backend"
+                ],
+                "filter": {
+                    "name": "server",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'server'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=server",
+                    "--package=prover_verifier_backend"
+                ],
+                "filter": {
+                    "name": "server",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'verifier_cli'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=verifier_cli",
+                    "--package=verifier_cli"
+                ],
+                "filter": {
+                    "name": "verifier_cli",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'verifier_cli'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=verifier_cli",
+                    "--package=verifier_cli"
+                ],
+                "filter": {
+                    "name": "verifier_cli",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
