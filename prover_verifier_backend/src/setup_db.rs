@@ -16,6 +16,7 @@ async fn main() -> Result<(), sqlx::Error> {
             id VARCHAR PRIMARY KEY NOT NULL,
             name VARCHAR NOT NULL,
             description VARCHAR NOT NULL,
+            price VARCHAR NOT NULL,
             model_path VARCHAR NOT NULL
         );",
     )
@@ -32,5 +33,26 @@ async fn main() -> Result<(), sqlx::Error> {
     .execute(&pool)
     .await?;
 
+    // User table
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY,
+            api_key VARCHAR NOT NULL
+        );",
+    ).execute(&pool)
+    .await?;
+
+    // User model purchase
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS users_model (
+            user_id INTEGER,
+            model_id VARCHAR NOT NULL,
+            FOREIGN KEY(user_id) REFERENCES users(id),
+            FOREIGN KEY(model_id) REFERENCES ml_models(id)
+        );",
+    ).execute(&pool)
+    .await?;
+
+        
     Ok(())
 }
