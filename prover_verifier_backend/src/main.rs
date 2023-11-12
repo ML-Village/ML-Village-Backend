@@ -263,9 +263,12 @@ async fn purchase_model(
         None => return Err(BadRequest(("Cannot find user".to_string()))),
     };
     println!("part 2");
+
+    let user_id: i32 = user.get("id");
+
     let insert_result: Result<sqlx::sqlite::SqliteQueryResult, sqlx::Error> =
         sqlx::query("INSERT INTO users_model (user_id, model_id) VALUES (?, ?)")
-            .bind(user.get::<String, &str>("id"))
+            .bind(&user_id)
             .bind(&model_id)
             .execute(&mut **db)
             .await;
@@ -292,10 +295,20 @@ async fn purchase_model(
 
     println!("masuk");
 
+    let id = model_id.to_string();
+    // Removing hyphens and converting to lowercase
+    let hex_id = id.replace("-", "").to_lowercase();
+
+    let subscription_end_timestamp_int: i64 = params
+        .subscription_end_timestamp
+        .parse()
+        .expect("Failed to parse subscription_end_timestamp to integer");
+    let subscription_end_timestamp_hex = format!("{:x}", subscription_end_timestamp_int);
+
     let register_subscription_result = register_subscription(
         FieldElement::from_hex_be(&params.owner_address).unwrap(),
-        FieldElement::from_hex_be(&model_id).unwrap(),
-        FieldElement::from_hex_be(&params.subscription_end_timestamp).unwrap(),
+        FieldElement::from_hex_be(&hex_id).unwrap(),
+        FieldElement::from_hex_be(&subscription_end_timestamp_hex).unwrap(),
     )
     .await
     .transaction_hash;
