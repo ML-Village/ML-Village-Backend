@@ -2,6 +2,20 @@
 
 ## APIs
 
+### `GET /models`
+
+#### Returns
+
+```json
+[{
+  "id": "string",
+  "name": "string",
+  "description": "string",
+  "price": "string"
+}]
+```
+
+
 ### `POST /model/<model_id>/purchase"`
 
 #### Path Params
