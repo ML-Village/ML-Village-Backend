@@ -17,11 +17,14 @@ mod tests {
     #[test]
     #[available_gas(2000000000000)]
     fn _main() {
+        let zero = FixedTrait::<FP16x16>::new_unscaled(0, false);
+        let one = FixedTrait::<FP16x16>::new_unscaled(1, false);
         let two = FixedTrait::<FP16x16>::new_unscaled(2, false);
 
         let mut x = Tensor {
             shape: array![9].span(),
-            data: array![two, two, two, two, two, two, two, two, two].span()
+            // Templating this
+            data: array![{%%}, {%%}, {%%}, {%%}, {%%}, {%%}, {%%}, {%%}, {%%}].span()
         };
 
         // DENSE 1

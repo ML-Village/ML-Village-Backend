@@ -147,6 +147,8 @@ async fn infer(
     mut db: Connection<ProverBackendDB>,
     params: Json<InferParams<'_>>,
 ) -> Result<Json<InferResult>, BadRequest<String>> {
+    // Right now hard code the running model
+    // TODO: don't hard code this
     let found_model = sqlx::query("SELECT * FROM ml_models WHERE id = ?")
         .bind(params.model_id)
         .fetch_one(&mut **db)

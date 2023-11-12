@@ -1,4 +1,3 @@
-use dotenvy;
 use starknet::{
     accounts::{Account, Call, ExecutionEncoding, SingleOwnerAccount},
     core::{

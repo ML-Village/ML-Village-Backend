@@ -3473,6 +3473,7 @@ dependencies = [
  "dotenvy",
  "lambdaworks-stark",
  "rand",
+ "regex",
  "rocket",
  "rocket_db_pools",
  "serde",

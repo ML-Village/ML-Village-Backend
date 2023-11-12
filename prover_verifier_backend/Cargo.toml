@@ -30,6 +30,7 @@ tokio = { version = "1", features = ["full"] }
 rand = "0.8.5"
 const-hex = "1.10.0"
 starknet = { git = "https://github.com/xJonathanLEI/starknet-rs", tag = "starknet-core/v0.7.2" }
+regex = "1.10.2"
 
 [[bin]]
 name = "setup_db"
@@ -39,3 +40,8 @@ path = "src/setup_db.rs"
 [[bin]]
 name = "server"
 path = "src/main.rs"
+
+
+[[bin]]
+name = "testing"
+path = "src/testing.rs"
