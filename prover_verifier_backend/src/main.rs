@@ -1,5 +1,7 @@
+use cairo_utils::prepare_inference_environment;
 use rand::RngCore;
 use rocket::http::Status;
+use rocket::serde::json::from_str;
 use rocket::tokio::fs::create_dir;
 
 use rocket::form::{Form, Strict};
@@ -16,6 +18,7 @@ use sqlx::Row;
 use starknet::core::types::FieldElement;
 use uuid::Uuid;
 
+mod cairo_utils;
 mod cors;
 mod cairo_utils;
 mod background_utils;
@@ -130,6 +133,7 @@ fn all_options() -> Custom<()> {
 /**
  * --- Infer ---
  */
+
 #[derive(Deserialize)]
 #[serde(crate = "rocket::serde")]
 struct InferParams<'r> {
@@ -164,7 +168,22 @@ async fn infer(
 
     // Create arbritrary id for the proof generated
     let proof_id = Uuid::new_v4();
-    // !todo!("generate the proof and save to a directory");
+
+    let input_data: Vec<Vec<i32>> = from_str(params.input_data)
+        .map_err(|err| BadRequest(format!("Invalid input data: {}", err)))?;
+    let mut all_inference_results = Vec::new();
+    for input_array in &input_data {
+        prepare_inference_environment("abc1".to_owned()).await.err();
+        // Assuming `convert_ttt_input_to_cairo` expects a flat Vec<i32>
+        cairo_utils::convert_ttt_input_to_cairo(input_array.clone(), &model_path)
+            .await
+            .map_err(|err| BadRequest(format!("Conversion error: {}", err)))?;
+
+        let inference_results = cairo_utils::run_inference(&model_path)
+            .await
+            .map_err(|err| BadRequest(format!("Inference error: {}", err)))?;
+        all_inference_results.push(inference_results);
+    }
 
     // Get and return the generated proof
     let content_type = ContentType::new("application", "octet-stream");
@@ -277,7 +296,6 @@ async fn purchase_model(
         Err(err) => return Err(BadRequest(err.to_string())),
     };
 
-
     let query_result = sqlx::query("SELECT * FROM ml_models WHERE id = ?")
         .bind(&model_id)
         .fetch_one(&mut **db)
@@ -321,8 +339,6 @@ async fn purchase_model(
     }))
 }
 
-
-
 #[get("/models")]
 async fn get_models(
     mut db: Connection<ProverBackendDB>,
@@ -337,16 +353,18 @@ async fn get_models(
         None => return Err(BadRequest("Cannot find any models".to_string())),
     };
 
-    let model_results: Vec<MlModel> = model_query_result.iter().map(|row| MlModel {
-        id: row.get("id"),
-        description: row.get("description"),
-        name: row.get("name"),
-        price: row.get("price")
-    }).collect();
+    let model_results: Vec<MlModel> = model_query_result
+        .iter()
+        .map(|row| MlModel {
+            id: row.get("id"),
+            description: row.get("description"),
+            name: row.get("name"),
+            price: row.get("price"),
+        })
+        .collect();
 
     Ok(Json(model_results))
 }
-
 
 /**
  * --- Create User ---
