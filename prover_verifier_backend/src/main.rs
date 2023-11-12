@@ -18,10 +18,9 @@ use sqlx::Row;
 use starknet::core::types::FieldElement;
 use uuid::Uuid;
 
+mod background_utils;
 mod cairo_utils;
 mod cors;
-mod cairo_utils;
-mod background_utils;
 mod giza_utils;
 mod service;
 use cors::CORS;
@@ -30,6 +29,8 @@ use cors::CORS;
 extern crate rocket;
 
 const MODEL_PATH: &str = "models";
+const INFERENCE_RESULT_PATH: &str = "inference_result";
+
 /**
  * Database setup
  */
@@ -136,16 +137,157 @@ fn all_options() -> Custom<()> {
 
 #[derive(Deserialize)]
 #[serde(crate = "rocket::serde")]
-struct InferParams<'r> {
+struct InferManyParams<'r> {
     model_id: &'r str,
-    input_data: &'r str,
+    input_datas: Vec<Vec<i32>>,
+}
+
+struct InferData {
+    proof_id: String,
+    infer_output: String,
 }
 
 #[derive(Serialize)]
 #[serde(crate = "rocket::serde")]
-struct InferResult<'r> {
-    proof_id: &'r str,
-    infer_result: &'r str,
+struct InferManyResult {
+    proof_id: String,
+    infer_result: Vec<i32>,
+}
+
+#[post("/infer_many", data = "<params>")]
+async fn infer_many(
+    mut db: Connection<ProverBackendDB>,
+    params: Json<InferManyParams<'_>>,
+) -> Result<Json<InferManyResult>, BadRequest<String>> {
+    // Right now hard code the running model
+    // TODO: don't hard code this
+    // let found_model = sqlx::query("SELECT * FROM ml_models WHERE id = ?")
+    //     .bind(params.model_id)
+    //     .fetch_one(&mut **db)
+    //     .await
+    //     .ok();
+
+    // let model_path: String = match found_model {
+    //     Some(model) => model.get("model_path"),
+    //     None => return Err(BadRequest("Failed to locate saved model.".to_owned())),
+    // };
+
+    // Create arbritrary id for the proof generated
+
+    let mut all_inference_results: Vec<InferData> = Vec::new();
+
+    for input_array in &params.input_datas {
+        let proof_id = Uuid::new_v4();
+
+        // Prepare env
+        prepare_inference_environment(proof_id.to_string())
+            .await
+            .err();
+
+        // Templating
+        cairo_utils::convert_ttt_input_to_cairo(
+            input_array.clone(),
+            format!(
+                "{}/{}/orion/src/test.cairo",
+                INFERENCE_RESULT_PATH,
+                proof_id.to_string()
+            )
+            .as_str(),
+        )
+        .await
+        .map_err(|err| BadRequest(format!("Conversion error: {}", err)))?;
+
+        cairo_utils::convert_ttt_input_to_cairo(
+            input_array.clone(),
+            format!(
+                "{}/{}/orion/src/inference.cairo",
+                INFERENCE_RESULT_PATH,
+                proof_id.to_string()
+            )
+            .as_str(),
+        )
+        .await
+        .map_err(|err| BadRequest(format!("Conversion error: {}", err)))?;
+
+        // Inference
+        let inference_results = cairo_utils::run_inference(
+            format!("{}/{}/orion", INFERENCE_RESULT_PATH, proof_id.to_string()).as_str(),
+        )
+        .await
+        .map_err(|err| BadRequest(format!("Inference error: {}", err)))?;
+        all_inference_results.push(InferData {
+            infer_output: inference_results[1].to_owned(),
+            proof_id: proof_id.to_string(),
+        });
+
+        // Generate trace
+        cairo_utils::generate_trace(
+            format!("{}/{}/orion", INFERENCE_RESULT_PATH, proof_id.to_string()).as_str(),
+        )
+        .await
+        .map_err(|err| BadRequest(format!("Trace error: {}", err)))?;
+
+        let insert_result: Result<sqlx::sqlite::SqliteQueryResult, sqlx::Error> =
+            sqlx::query("INSERT INTO ml_proofs (id, model_id) VALUES (?, ?)")
+                .bind(&proof_id.to_string())
+                .bind("tictactoe")
+                .execute(&mut **db)
+                .await;
+
+        match insert_result {
+            Ok(_) => Ok::<(), String>(()),
+            Err(err) => return Err(BadRequest(err.to_string())),
+        };
+    }
+
+    let best_infer_idx = all_inference_results
+        .iter()
+        .enumerate()
+        .map(|(idx, r)| {
+            (
+                idx,
+                i32::from_str_radix(r.infer_output.as_str(), 16).expect("failed to calculate"),
+            )
+        })
+        .max_by(|(_, a), (_, b)| a.cmp(b))
+        .map(|(idx, _)| idx);
+
+    let best_infer_idx = match best_infer_idx {
+        Some(idx) => idx,
+        None => return Err(BadRequest("Failed to infer".to_owned())),
+    };
+
+    // Get and return the generated proof
+    // let content_type = ContentType::new("application", "octet-stream");
+    // let file = match NamedFile::open(format!(
+    //     "inference_result/{}/{}.proof",
+    //     params.model_id, proof_id
+    // ))
+    // .await
+    // {
+    //     Ok(file) => file,
+    //     Err(_) => return Err(BadRequest("Failed to generate proof".to_owned())),
+    // };
+
+    let final_result = params.input_datas[best_infer_idx].clone();
+
+    return Ok(Json(InferManyResult {
+        infer_result: final_result,
+        proof_id: all_inference_results[best_infer_idx].proof_id.to_owned(),
+    }));
+}
+
+#[derive(Deserialize)]
+#[serde(crate = "rocket::serde")]
+struct InferParams<'r> {
+    model_id: &'r str,
+    input_data: Vec<i32>,
+}
+
+#[derive(Serialize)]
+#[serde(crate = "rocket::serde")]
+struct InferResult {
+    proof_id: String,
 }
 
 #[post("/infer", data = "<params>")]
@@ -153,54 +295,95 @@ async fn infer(
     mut db: Connection<ProverBackendDB>,
     params: Json<InferParams<'_>>,
 ) -> Result<Json<InferResult>, BadRequest<String>> {
-    // Right now hard code the running model
-    // TODO: don't hard code this
-    let found_model = sqlx::query("SELECT * FROM ml_models WHERE id = ?")
-        .bind(params.model_id)
-        .fetch_one(&mut **db)
-        .await
-        .ok();
-
-    let model_path: String = match found_model {
-        Some(model) => model.get("model_path"),
-        None => return Err(BadRequest("Failed to locate saved model.".to_owned())),
-    };
-
-    // Create arbritrary id for the proof generated
     let proof_id = Uuid::new_v4();
 
-    let input_data: Vec<Vec<i32>> = from_str(params.input_data)
-        .map_err(|err| BadRequest(format!("Invalid input data: {}", err)))?;
-    let mut all_inference_results = Vec::new();
-    for input_array in &input_data {
-        prepare_inference_environment("abc1".to_owned()).await.err();
-        // Assuming `convert_ttt_input_to_cairo` expects a flat Vec<i32>
-        cairo_utils::convert_ttt_input_to_cairo(input_array.clone(), &model_path)
-            .await
-            .map_err(|err| BadRequest(format!("Conversion error: {}", err)))?;
+    // Prepare env
+    prepare_inference_environment(proof_id.to_string())
+        .await
+        .err();
 
-        let inference_results = cairo_utils::run_inference(&model_path)
-            .await
-            .map_err(|err| BadRequest(format!("Inference error: {}", err)))?;
-        all_inference_results.push(inference_results);
-    }
-
-    // Get and return the generated proof
-    let content_type = ContentType::new("application", "octet-stream");
-    let file = match NamedFile::open(format!(
-        "inference_result/{}/{}.proof",
-        params.model_id, proof_id
-    ))
+    // Templating
+    cairo_utils::convert_ttt_input_to_cairo(
+        params.input_data.clone(),
+        format!(
+            "{}/{}/orion/src/test.cairo",
+            INFERENCE_RESULT_PATH,
+            proof_id
+        )
+        .as_str(),
+    )
     .await
-    {
-        Ok(file) => file,
-        Err(_) => return Err(BadRequest("Failed to generate proof".to_owned())),
+    .map_err(|err| BadRequest(format!("Conversion error: {}", err)))?;
+
+    cairo_utils::convert_ttt_input_to_cairo(
+        params.input_data.clone(),
+        format!(
+            "{}/{}/orion/src/inference.cairo",
+            INFERENCE_RESULT_PATH,
+            proof_id.to_string()
+        )
+        .as_str(),
+    )
+    .await
+    .map_err(|err| BadRequest(format!("Conversion error: {}", err)))?;
+
+    // Inference
+    let inference_results = cairo_utils::run_inference(
+        format!("{}/{}/orion", INFERENCE_RESULT_PATH, proof_id.to_string()).as_str(),
+    )
+    .await
+    .map_err(|err| BadRequest(format!("Inference error: {}", err)))?;
+
+    println!("InferResult: {:?}", inference_results);
+
+    // Generate trace
+    cairo_utils::generate_trace(
+        format!("{}/{}/orion", INFERENCE_RESULT_PATH, proof_id.to_string()).as_str(),
+    )
+    .await
+    .map_err(|err| BadRequest(format!("Trace error: {}", err)))?;
+
+    let insert_result: Result<sqlx::sqlite::SqliteQueryResult, sqlx::Error> =
+        sqlx::query("INSERT INTO ml_proofs (id, model_id) VALUES (?, ?)")
+            .bind(&proof_id.to_string())
+            .bind("tictactoe")
+            .execute(&mut **db)
+            .await;
+
+    match insert_result {
+        Ok(_) => Ok::<(), String>(()),
+        Err(err) => return Err(BadRequest(err.to_string())),
     };
 
-    return Ok(Json(InferResult {
-        infer_result: "",
-        proof_id: "",
-    }));
+    giza_utils::generate_proof_from_casm(
+        format!(
+            "{}/{}/orion/target/dev/tic_tac_toe_orion_OrionRunner.compiled_contract_class.json",
+            INFERENCE_RESULT_PATH, proof_id
+        ),
+        format!("{}/{}/zk.proof", INFERENCE_RESULT_PATH, proof_id),
+    )
+    .await
+    .map_err(|err| BadRequest(format!("Generate proof error: {}", err)))?;
+
+    println!(
+        "Proof generated at {}/{}/zk.proof",
+        INFERENCE_RESULT_PATH, proof_id
+    );
+    // Get and return the generated proof
+    // let content_type = ContentType::new("application", "octet-stream");
+    // let file = match NamedFile::open(format!(
+    //     "inference_result/{}/{}.proof",
+    //     params.model_id, proof_id
+    // ))
+    // .await
+    // {
+    //     Ok(file) => file,
+    //     Err(_) => return Err(BadRequest("Failed to generate proof".to_owned())),
+    // };
+
+    Ok(Json(InferResult {
+        proof_id: proof_id.to_string(),
+    }))
 }
 
 /**
@@ -467,6 +650,7 @@ async fn rocket() -> _ {
             routes![
                 upload_model,
                 infer,
+                infer_many,
                 purchase_model,
                 get_models,
                 all_options,
