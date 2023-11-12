@@ -34,33 +34,28 @@ pub async fn prepare_inference_environment(proof_id: String) -> Result<(), Strin
     Ok(())
 }
 
-pub async fn convert_ttt_input_to_cairo(input_str: &str, write_path: &str) -> Result<(), String> {
+pub async fn convert_ttt_input_to_cairo(input_nums: Vec<i32>, write_path: &str) -> Result<(), String> {
     // Hard coded to tic tac toe for now
     // TODO: MAKE IT GENERAL
-    let rows: Vec<&str> = input_str.split(';').collect();
 
-    fn num_str_to_str(num_str: &str) -> String {
-        if num_str == "0" {
+    fn num_str_to_str(num: &i32) -> String {
+        if *num == 0 {
             return "zero".to_owned()
         }
-        if num_str == "1"  {
+        if *num == 1  {
             return "one".to_owned()
         }
         "two".to_owned()
     }
 
-    let row1: Vec<String> = rows[0].split(',').map(num_str_to_str).collect();
-    let row2: Vec<String> = rows[1].split(',').map(num_str_to_str).collect();
-    let row3: Vec<String> = rows[2].split(',').map(num_str_to_str).collect();
+    let values: Vec<String> = input_nums.iter().map(num_str_to_str).collect();
 
     // Read from file now
     let mut file = File::open(&write_path).await.map_err(|err| err.to_string())?;
     let mut contents = String::new();
 	file.read_to_string(&mut contents).await.map_err(|err| err.to_string())?;
 
-    row1.iter().for_each(|entry| contents = contents.replacen("{%%}", entry, 1));
-    row2.iter().for_each(|entry| contents = contents.replacen("{%%}", entry, 1));
-    row3.iter().for_each(|entry| contents = contents.replacen("{%%}", entry, 1));
+    values.iter().for_each(|entry| contents = contents.replacen("{%%}", entry, 1));
     fs::write(&write_path, contents).await.map_err(|err| err.to_string())?;
     Ok(())
 }
@@ -82,4 +77,15 @@ pub async fn run_inference(program_path: &str) -> Result<Vec<String>, String> {
         .collect();
 
     Ok(outputs)
+}
+
+
+pub async fn generate_trace(program_path: &str) -> Result<(), String> {
+    Command::new("scarb")
+        .current_dir(program_path)
+        .arg("build")
+        .output()
+        .map_err(|err| format!("Failed to execute scarb: {:?}", err))?;
+
+    Ok(())
 }
