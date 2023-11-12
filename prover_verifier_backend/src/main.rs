@@ -246,7 +246,7 @@ async fn infer_many(
         .map(|(idx, r)| {
             (
                 idx,
-                i32::from_str_radix(r.infer_output.as_str(), 16).expect("failed to calculate"),
+                i32::from_str_radix(r.infer_output.trim_start_matches("0x"), 16).expect("failed to calculate"),
             )
         })
         .max_by(|(_, a), (_, b)| a.cmp(b))
