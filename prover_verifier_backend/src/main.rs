@@ -257,12 +257,10 @@ async fn purchase_model(
         .await
         .ok();
 
-    println!("part 1");
     let user = match query_result {
         Some(row) => row,
         None => return Err(BadRequest(("Cannot find user".to_string()))),
     };
-    println!("part 2");
 
     let user_id: i32 = user.get("id");
 
@@ -272,13 +270,11 @@ async fn purchase_model(
             .bind(&model_id)
             .execute(&mut **db)
             .await;
-    println!("part 3");
     match insert_result {
         Ok(_) => Ok::<(), String>(()),
         Err(err) => return Err(BadRequest(err.to_string())),
     };
 
-    println!("part 4");
 
     let query_result = sqlx::query("SELECT * FROM ml_models WHERE id = ?")
         .bind(&model_id)
@@ -286,14 +282,10 @@ async fn purchase_model(
         .await
         .ok();
 
-    println!("part 5");
-
     let model = match query_result {
         Some(row) => row,
         None => return Err(BadRequest(("Cannot find user".to_string()))),
     };
-
-    println!("masuk");
 
     let id = model_id.to_string();
     // Removing hyphens and converting to lowercase
@@ -326,6 +318,33 @@ async fn purchase_model(
         transaction_hash: register_subscription_result.to_string(),
     }))
 }
+
+
+
+#[get("/models")]
+async fn get_models(
+    mut db: Connection<ProverBackendDB>,
+) -> Result<Json<Vec<MlModel>>, BadRequest<String>> {
+    let query_result = sqlx::query("SELECT * FROM ml_models")
+        .fetch_all(&mut **db)
+        .await
+        .ok();
+
+    let model_query_result = match query_result {
+        Some(row) => row,
+        None => return Err(BadRequest("Cannot find any models".to_string())),
+    };
+
+    let model_results: Vec<MlModel> = model_query_result.iter().map(|row| MlModel {
+        id: row.get("id"),
+        description: row.get("description"),
+        name: row.get("name"),
+        price: row.get("price")
+    }).collect();
+
+    Ok(Json(model_results))
+}
+
 
 /**
  * --- Create User ---
@@ -429,6 +448,7 @@ async fn rocket() -> _ {
                 upload_model,
                 infer,
                 purchase_model,
+                get_models,
                 all_options,
                 get_proof,
                 create_user,
