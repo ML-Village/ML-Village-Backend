@@ -17,6 +17,8 @@ use starknet::core::types::FieldElement;
 use uuid::Uuid;
 
 mod cors;
+mod cairo_utils;
+mod background_utils;
 mod giza_utils;
 mod service;
 use cors::CORS;

@@ -18,7 +18,7 @@ pub async fn transpile_onnx_to_orion(file_path: &str, output_path: &str) -> Resu
     }
 }
 
-pub async fn generate_proof_from_casm(casm_path: &str, output_path: &str) -> Result<(), String> {
+pub async fn generate_proof_from_casm(casm_path: String, output_file: String) -> Result<(), String> {
     // Execute the giza CLI command
     let output = Command::new(".venv/bin/giza")
         .arg("prove")
@@ -26,7 +26,7 @@ pub async fn generate_proof_from_casm(casm_path: &str, output_path: &str) -> Res
         .arg("-s")
         .arg("M")
         .arg("-o")
-        .arg(output_path)
+        .arg(output_file)
         .output()
         .map_err(|err| format!("Failed to execute giza: {:?}", err))?;
 
