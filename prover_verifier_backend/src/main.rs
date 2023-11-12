@@ -288,6 +288,7 @@ struct InferParams<'r> {
 #[serde(crate = "rocket::serde")]
 struct InferResult {
     proof_id: String,
+    infer_result: Vec<String>,
 }
 
 #[post("/infer", data = "<params>")]
@@ -383,6 +384,7 @@ async fn infer(
 
     Ok(Json(InferResult {
         proof_id: proof_id.to_string(),
+        infer_result: inference_results
     }))
 }
 
